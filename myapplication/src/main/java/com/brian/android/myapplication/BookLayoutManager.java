@@ -31,32 +31,47 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             return dx;
         }
 
-        if (scrollX + dx > getWidth()) {
-            dx = getWidth() - scrollX;
-            scrollX = getWidth();
-        } else if (scrollX + dx < -getWidth()) {
-            dx = -getWidth() - scrollX;
-            scrollX = -getWidth();
+        boolean forward = scrollX > 0 || (scrollX == 0 && dx > 0);
+        if (forward) {
+            if (scrollX + dx > getWidth()) {
+                dx = getWidth() - scrollX;
+                scrollX = getWidth();
+            } else if (scrollX + dx < 0) {
+                dx = -scrollX;
+                scrollX = 0;
+            } else {
+                scrollX = scrollX + dx;
+            }
+            if (scrollX < getWidth() / 2) {
+                float rotation = -(180 * scrollX / getWidth());
+                findViewById(ID_PAGE_RIGHT).setRotationY(rotation);
+                findViewById(ID_PAGE_LEFT_TOP).setRotationY(90);
+            } else {
+                findViewById(ID_PAGE_RIGHT).setRotationY(-90);
+                float rotation = -(180 * scrollX / getWidth()) - 180;
+                findViewById(ID_PAGE_LEFT_TOP).setRotationY(rotation);
+            }
         } else {
-            scrollX += dx;
+            if (scrollX + dx < -getWidth()) {
+                dx = -getWidth() - scrollX;
+                scrollX = -getWidth();
+            } else if (scrollX + dx > 0) {
+                dx = -scrollX;
+                scrollX = 0;
+            } else {
+                scrollX = scrollX + dx;
+            }
+            if (scrollX > -getWidth() / 2) {
+                float rotation = -(180 * scrollX / getWidth());
+                findViewById(ID_PAGE_LEFT).setRotationY(rotation);
+                findViewById(ID_PAGE_RIGHT_TOP).setRotationY(-90);
+            } else {
+                findViewById(ID_PAGE_LEFT).setRotationY(90);
+                float rotation = -(180 * scrollX / getWidth()) - 180;
+                findViewById(ID_PAGE_RIGHT_TOP).setRotationY(rotation);
+            }
         }
         Log.i(TAG, "scroll by, dx = " + dx + ", scroll x = " + scrollX);
-
-        View rightView = findViewById(ID_PAGE_RIGHT);
-        float rightViewRotation = -(180 * Math.min(getWidth() / 2, Math.max(0, scrollX)) / getWidth());
-        rightView.setRotationY(rightViewRotation);
-
-        View leftView = findViewById(ID_PAGE_LEFT);
-        float leftViewRotation = -(180 * Math.min(0, Math.max(- getWidth() / 2, scrollX)) / getWidth());
-        leftView.setRotationY(leftViewRotation);
-
-        View topRightView = findViewById(ID_PAGE_RIGHT_TOP);
-        float topRightViewRotation = -(180 * Math.min(- getWidth() / 2, Math.max(- getWidth(), scrollX)) / getWidth()) - 180;
-        topRightView.setRotationY(topRightViewRotation);
-
-        View topLeftView = findViewById(ID_PAGE_LEFT_TOP);
-        float topLeftViewRotation = -(180 * Math.min(getWidth(), Math.max(getWidth() / 2, scrollX)) / getWidth()) - 180;;
-        topLeftView.setRotationY(topLeftViewRotation);
 
         return dx;
     }
