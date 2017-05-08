@@ -51,6 +51,11 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
                 float rotation = -(180 * scrollX / getWidth()) - 180;
                 findViewById(ID_PAGE_LEFT_TOP).setRotationY(rotation);
             }
+            if (scrollX == getWidth()) {
+                currentPosition = getPosition(findViewById(ID_PAGE_LEFT_TOP));
+                fillPages(recycler, state);
+                scrollX = 0;
+            }
         } else {
             if (scrollX + dx < -getWidth()) {
                 dx = -getWidth() - scrollX;
@@ -70,8 +75,13 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
                 float rotation = -(180 * scrollX / getWidth()) - 180;
                 findViewById(ID_PAGE_RIGHT_TOP).setRotationY(rotation);
             }
+            if (scrollX == -getWidth()) {
+                currentPosition = getPosition(findViewById(ID_PAGE_RIGHT_TOP));
+                fillPages(recycler, state);
+                scrollX = 0;
+            }
         }
-        Log.i(TAG, "scroll by, dx = " + dx + ", scroll x = " + scrollX);
+        //Log.i(TAG, "scroll by, dx = " + dx + ", scroll x = " + scrollX);
 
         return dx;
     }
@@ -86,38 +96,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         return null;
     }
 
-    private View findRightView(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        View viewFound = null;
-        int viewPosition = Integer.MAX_VALUE;
-        for (int i = 0; i < getChildCount(); i++) {
-            View view = getChildAt(i);
-            if (isRightView(view) && view.getVisibility() == View.VISIBLE) {
-                int position = getPosition(view);
-                if (position < viewPosition) {
-                    viewFound = view;
-                    viewPosition = position;
-                }
-            }
-        }
-        return viewFound;
-    }
-
-    private View findLeftView(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        View viewFound = null;
-        int viewPosition = Integer.MIN_VALUE;
-        for (int i = 0; i < getChildCount(); i++) {
-            View view = getChildAt(i);
-            if (isLeftView(view) && view.getVisibility() == View.VISIBLE) {
-                int position = getPosition(view);
-                if (position > viewPosition) {
-                    viewFound = view;
-                    viewPosition = position;
-                }
-            }
-        }
-        return viewFound;
-    }
-
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         SparseArray<View> viewCache = new SparseArray(getChildCount());
@@ -129,6 +107,23 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         }
 
         findCurrentPosition(viewCache, recycler, state);
+
+        fillPages(recycler, state);
+    }
+
+    @Override
+    public boolean canScrollHorizontally() {
+        return true;
+    }
+
+    private void fillPages(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        SparseArray<View> viewCache = new SparseArray(getChildCount());
+        if (getChildCount() != 0) {
+            for (int i = 0; i < getChildCount(); i++) {
+                View child = getChildAt(i);
+                viewCache.put(getPosition(child), child);
+            }
+        }
 
         for (int i = 0; i < viewCache.size(); i++) {
             detachView(viewCache.valueAt(i));
@@ -145,12 +140,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             recycler.recycleView(viewCache.valueAt(i));
         }
     }
-
-    @Override
-    public boolean canScrollHorizontally() {
-        return true;
-    }
-
     private void findCurrentPosition(SparseArray<View> viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {
         int itemCount = state.getItemCount();
         int viewCount = viewCache.size();
