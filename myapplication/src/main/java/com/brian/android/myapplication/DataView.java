@@ -8,7 +8,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 public class DataView extends ViewGroup {
-    private static final int[] COLOR_LIST = {Color.CYAN, Color.BLUE, Color.GREEN, Color.GRAY};
+    private static final int[] COLOR_LIST = {Color.CYAN, Color.BLUE, Color.GREEN, Color.GRAY, Color.MAGENTA, Color.RED};
     private TextView textView;
 
     public DataView(Context context) {
@@ -18,8 +18,8 @@ public class DataView extends ViewGroup {
 
     private void init(Context context) {
         textView = new TextView(context);
-        textView.setTextSize(64);
-        textView.setTextColor(Color.RED);
+        textView.setTextSize(128);
+        textView.setTextColor(Color.WHITE);
         textView.setGravity(Gravity.CENTER);
         textView.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         addView(textView);
@@ -27,7 +27,7 @@ public class DataView extends ViewGroup {
 
     void bindData(MainActivity.AdapterData data) {
         textView.setText(String.valueOf(data.id));
-        int color = COLOR_LIST[Math.abs(data.id) % COLOR_LIST.length];
+        int color = COLOR_LIST[Math.abs(data.id + 3) % COLOR_LIST.length];
         setBackgroundColor(color);
     }
 
@@ -43,8 +43,8 @@ public class DataView extends ViewGroup {
         for (int i = 0; i < childCount; i++) {
             final View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
-                int childLeft = child.getMeasuredWidth() / 2;
-                int childTop = child.getMeasuredHeight() / 2;
+                int childLeft = (getWidth() - child.getMeasuredWidth()) / 2;
+                int childTop = (getHeight() - child.getMeasuredHeight()) / 2;
                 child.layout(childLeft, childTop, childLeft + child.getMeasuredWidth(), childTop + child.getMeasuredHeight());
             }
         }

@@ -212,18 +212,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         Log.i(TAG, "find current position, item count = " + itemCount + ", view count = " + viewCount + ", position = " + currentPosition);
     }
 
-    private int findLeftVisibleViewPosition(SparseArray<View> viewCache) {
-        int result = -1;
-        for (int i = 0; i < viewCache.size(); i++) {
-            int position = viewCache.keyAt(i);
-            View view = viewCache.get(position);
-            if (isLeftView(view) && view.getVisibility() == View.VISIBLE) {
-                result = Math.max(result, position);
-            }
-        }
-        return result;
-    }
-
     private boolean isLeftView(View view) {
         return view.getLeft() < getWidth() / 2;
     }
@@ -260,6 +248,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
 
         view.setId(pageId);
         view.setPivotX(view.getWidth());
+        view.setPivotY(view.getHeight() / 2);
+        view.setCameraDistance(10 * view.getWidth());
         if (pageId == ID_PAGE_LEFT_TOP) {
             view.setRotationY(90);
         }
@@ -293,6 +283,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
 
         view.setId(pageId);
         view.setPivotX(0);
+        view.setPivotY(view.getHeight() / 2);
+        view.setCameraDistance(10 * view.getWidth());
         if (pageId == ID_PAGE_RIGHT_TOP) {
             view.setRotationY(-90);
         }
