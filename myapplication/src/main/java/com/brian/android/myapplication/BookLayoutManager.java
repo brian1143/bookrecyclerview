@@ -31,6 +31,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             return dx;
         }
 
+        // Update scroll position.
         boolean forward = scrollX > 0 || (scrollX == 0 && dx > 0);
         if (forward) {
             if (scrollX + dx > getWidth()) {
@@ -42,35 +43,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             } else {
                 scrollX = scrollX + dx;
             }
-            if (scrollX < getWidth() / 2) {
-                float rotation = -(180 * scrollX / getWidth());
-                View view = findViewById(ID_PAGE_RIGHT);
-                if (view != null) {
-                    view.setRotationY(rotation);
-                }
-                view = findViewById(ID_PAGE_LEFT_TOP);
-                if (view != null) {
-                    view.setRotationY(90);
-                }
-            } else {
-                View view = findViewById(ID_PAGE_RIGHT);
-                if (view != null) {
-                    view.setRotationY(-90);
-                }
-                float rotation = -(180 * scrollX / getWidth()) - 180;
-                view = findViewById(ID_PAGE_LEFT_TOP);
-                if (view != null) {
-                    view.setRotationY(rotation);
-                }
-            }
-            if (scrollX == getWidth()) {
-                View view = findViewById(ID_PAGE_LEFT_TOP);
-                if (view != null) {
-                    currentPosition = getPosition(view);
-                    fillPages(recycler, state);
-                    scrollX = 0;
-                }
-            }
         } else {
             if (scrollX + dx < -getWidth()) {
                 dx = -getWidth() - scrollX;
@@ -81,9 +53,66 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             } else {
                 scrollX = scrollX + dx;
             }
+        }
+
+        rotateViewByScroll();
+
+        checkScrollEnd(recycler, state);
+
+        return dx;
+    }
+
+    private void rotateViewByScroll() {
+        View view = findViewById(ID_PAGE_LEFT_BOTTOM);
+        if (view != null) {
+            view.setRotationY(0);
+        }
+        view = findViewById(ID_PAGE_RIGHT_BOTTOM);
+        if (view != null) {
+            view.setRotationY(0);
+        }
+        if (scrollX > 0) {
+            view = findViewById(ID_PAGE_LEFT);
+            if (view != null) {
+                view.setRotationY(0);
+            }
+            view = findViewById(ID_PAGE_RIGHT_TOP);
+            if (view != null) {
+                view.setRotationY(-90);
+            }
+            if (scrollX < getWidth() / 2) {
+                float rotation = -(180 * scrollX / getWidth());
+                view = findViewById(ID_PAGE_RIGHT);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
+                view = findViewById(ID_PAGE_LEFT_TOP);
+                if (view != null) {
+                    view.setRotationY(90);
+                }
+            } else {
+                view = findViewById(ID_PAGE_RIGHT);
+                if (view != null) {
+                    view.setRotationY(-90);
+                }
+                float rotation = -(180 * scrollX / getWidth()) - 180;
+                view = findViewById(ID_PAGE_LEFT_TOP);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
+            }
+        } else if (scrollX < 0) {
+            view = findViewById(ID_PAGE_RIGHT);
+            if (view != null) {
+                view.setRotationY(0);
+            }
+            view = findViewById(ID_PAGE_LEFT_TOP);
+            if (view != null) {
+                view.setRotationY(90);
+            }
             if (scrollX > -getWidth() / 2) {
                 float rotation = -(180 * scrollX / getWidth());
-                View view = findViewById(ID_PAGE_LEFT);
+                view = findViewById(ID_PAGE_LEFT);
                 if (view != null) {
                     view.setRotationY(rotation);
                 }
@@ -92,7 +121,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
                     view.setRotationY(-90);
                 }
             } else {
-                View view = findViewById(ID_PAGE_LEFT);
+                view = findViewById(ID_PAGE_LEFT);
                 if (view != null) {
                     view.setRotationY(90);
                 }
@@ -102,18 +131,45 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
                     view.setRotationY(rotation);
                 }
             }
-            if (scrollX == -getWidth()) {
-                View view = findViewById(ID_PAGE_LEFT_BOTTOM);
-                if (view != null) {
-                    currentPosition = getPosition(view);
-                    fillPages(recycler, state);
-                    scrollX = 0;
-                }
+        } else {
+            view = findViewById(ID_PAGE_LEFT);
+            if (view != null) {
+                view.setRotationY(0);
+            }
+            view = findViewById(ID_PAGE_LEFT_TOP);
+            if (view != null) {
+                view.setRotationY(90);
+            }
+            view = findViewById(ID_PAGE_RIGHT);
+            if (view != null) {
+                view.setRotationY(0);
+            }
+            view = findViewById(ID_PAGE_RIGHT_TOP);
+            if (view != null) {
+                view.setRotationY(-90);
             }
         }
-        //Log.i(TAG, "scroll by, dx = " + dx + ", scroll x = " + scrollX);
+    }
 
-        return dx;
+    private void checkScrollEnd(RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (scrollX == getWidth()) {
+            View view = findViewById(ID_PAGE_LEFT_TOP);
+            if (view != null) {
+                currentPosition = getPosition(view);
+                fillPages(recycler, state);
+                scrollX = 0;
+                rotateViewByScroll();
+            }
+        }
+        if (scrollX == -getWidth()) {
+            View view = findViewById(ID_PAGE_LEFT_BOTTOM);
+            if (view != null) {
+                currentPosition = getPosition(view);
+                fillPages(recycler, state);
+                scrollX = 0;
+                rotateViewByScroll();
+            }
+        }
     }
 
     private View findViewById(int pageId) {
@@ -139,6 +195,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         findCurrentPosition(viewCache, recycler, state);
 
         fillPages(recycler, state);
+
+        rotateViewByScroll();
     }
 
     @Override
@@ -269,11 +327,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         view.setPivotX(view.getWidth());
         view.setPivotY(view.getHeight() / 2);
         view.setCameraDistance(10 * view.getWidth());
-        if (pageId == ID_PAGE_LEFT_TOP) {
-            view.setRotationY(90);
-        } else {
-            view.setRotationY(0);
-        }
     }
 
     private void fillRightPage(int position, SparseArray viewCache, int pageId, RecyclerView.Recycler recycler, RecyclerView.State state) {
@@ -306,10 +359,5 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         view.setPivotX(0);
         view.setPivotY(view.getHeight() / 2);
         view.setCameraDistance(10 * view.getWidth());
-        if (pageId == ID_PAGE_RIGHT_TOP) {
-            view.setRotationY(-90);
-        } else {
-            view.setRotationY(0);
-        }
     }
 }
