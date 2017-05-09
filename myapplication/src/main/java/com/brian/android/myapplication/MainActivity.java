@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new BookLayoutManager());
         adapter = new Adapter();
         recyclerView.setAdapter(adapter);
+        BookSnapHelper snapHelper = new BookSnapHelper();
+        snapHelper.attachToRecyclerView(recyclerView);
     }
 
     @Override

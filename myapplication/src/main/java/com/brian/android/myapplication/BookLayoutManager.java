@@ -10,15 +10,25 @@ import android.view.ViewGroup;
 class BookLayoutManager extends RecyclerView.LayoutManager {
     private static final String TAG = "BookLayoutManager";
 
-    private static final int ID_PAGE_LEFT = 0;
-    private static final int ID_PAGE_RIGHT = 1;
-    private static final int ID_PAGE_LEFT_BOTTOM = 2;
-    private static final int ID_PAGE_RIGHT_BOTTOM = 3;
-    private static final int ID_PAGE_LEFT_TOP = 4;
-    private static final int ID_PAGE_RIGHT_TOP = 5;
+    static final int ID_PAGE_LEFT = 0;
+    static final int ID_PAGE_RIGHT = 1;
+    static final int ID_PAGE_LEFT_BOTTOM = 2;
+    static final int ID_PAGE_RIGHT_BOTTOM = 3;
+    static final int ID_PAGE_LEFT_TOP = 4;
+    static final int ID_PAGE_RIGHT_TOP = 5;
 
     private int currentPosition;
     private int scrollX;
+
+    View findRotatingView() {
+        for (int i = 0; i < getChildCount(); i++) {
+            View view = getChildAt(i);
+            if (view.getRotationY() != 0) {
+                return view;
+            }
+        }
+        return null;
+    }
 
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
@@ -228,6 +238,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             recycler.recycleView(viewCache.valueAt(i));
         }
     }
+
     private void findCurrentPosition(SparseArray<View> viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {
         int itemCount = state.getItemCount();
         int viewCount = viewCache.size();
@@ -287,14 +298,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             }
         }
         Log.i(TAG, "find current position, item count = " + itemCount + ", view count = " + viewCount + ", position = " + currentPosition);
-    }
-
-    private boolean isLeftView(View view) {
-        return view.getLeft() < getWidth() / 2;
-    }
-
-    private boolean isRightView(View view) {
-        return view.getLeft() >= getWidth() / 2;
     }
 
     private void fillLeftPage(int position, SparseArray viewCache, int pageId, RecyclerView.Recycler recycler, RecyclerView.State state) {
