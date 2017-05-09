@@ -44,17 +44,32 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             }
             if (scrollX < getWidth() / 2) {
                 float rotation = -(180 * scrollX / getWidth());
-                findViewById(ID_PAGE_RIGHT).setRotationY(rotation);
-                findViewById(ID_PAGE_LEFT_TOP).setRotationY(90);
+                View view = findViewById(ID_PAGE_RIGHT);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
+                view = findViewById(ID_PAGE_LEFT_TOP);
+                if (view != null) {
+                    view.setRotationY(90);
+                }
             } else {
-                findViewById(ID_PAGE_RIGHT).setRotationY(-90);
+                View view = findViewById(ID_PAGE_RIGHT);
+                if (view != null) {
+                    view.setRotationY(-90);
+                }
                 float rotation = -(180 * scrollX / getWidth()) - 180;
-                findViewById(ID_PAGE_LEFT_TOP).setRotationY(rotation);
+                view = findViewById(ID_PAGE_LEFT_TOP);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
             }
             if (scrollX == getWidth()) {
-                currentPosition = getPosition(findViewById(ID_PAGE_LEFT_TOP));
-                fillPages(recycler, state);
-                scrollX = 0;
+                View view = findViewById(ID_PAGE_LEFT_TOP);
+                if (view != null) {
+                    currentPosition = getPosition(view);
+                    fillPages(recycler, state);
+                    scrollX = 0;
+                }
             }
         } else {
             if (scrollX + dx < -getWidth()) {
@@ -68,17 +83,32 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
             }
             if (scrollX > -getWidth() / 2) {
                 float rotation = -(180 * scrollX / getWidth());
-                findViewById(ID_PAGE_LEFT).setRotationY(rotation);
-                findViewById(ID_PAGE_RIGHT_TOP).setRotationY(-90);
+                View view = findViewById(ID_PAGE_LEFT);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
+                view = findViewById(ID_PAGE_RIGHT_TOP);
+                if (view != null) {
+                    view.setRotationY(-90);
+                }
             } else {
-                findViewById(ID_PAGE_LEFT).setRotationY(90);
+                View view = findViewById(ID_PAGE_LEFT);
+                if (view != null) {
+                    view.setRotationY(90);
+                }
                 float rotation = -(180 * scrollX / getWidth()) - 180;
-                findViewById(ID_PAGE_RIGHT_TOP).setRotationY(rotation);
+                view = findViewById(ID_PAGE_RIGHT_TOP);
+                if (view != null) {
+                    view.setRotationY(rotation);
+                }
             }
             if (scrollX == -getWidth()) {
-                currentPosition = getPosition(findViewById(ID_PAGE_RIGHT_TOP));
-                fillPages(recycler, state);
-                scrollX = 0;
+                View view = findViewById(ID_PAGE_LEFT_BOTTOM);
+                if (view != null) {
+                    currentPosition = getPosition(view);
+                    fillPages(recycler, state);
+                    scrollX = 0;
+                }
             }
         }
         //Log.i(TAG, "scroll by, dx = " + dx + ", scroll x = " + scrollX);
@@ -98,7 +128,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        SparseArray<View> viewCache = new SparseArray(getChildCount());
+        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
         if (getChildCount() != 0) {
             for (int i = 0; i < getChildCount(); i++) {
                 View child = getChildAt(i);
@@ -117,7 +147,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
     }
 
     private void fillPages(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        SparseArray<View> viewCache = new SparseArray(getChildCount());
+        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
         if (getChildCount() != 0) {
             for (int i = 0; i < getChildCount(); i++) {
                 View child = getChildAt(i);
@@ -241,6 +271,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         view.setCameraDistance(10 * view.getWidth());
         if (pageId == ID_PAGE_LEFT_TOP) {
             view.setRotationY(90);
+        } else {
+            view.setRotationY(0);
         }
     }
 
@@ -276,6 +308,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager {
         view.setCameraDistance(10 * view.getWidth());
         if (pageId == ID_PAGE_RIGHT_TOP) {
             view.setRotationY(-90);
+        } else {
+            view.setRotationY(0);
         }
     }
 }
