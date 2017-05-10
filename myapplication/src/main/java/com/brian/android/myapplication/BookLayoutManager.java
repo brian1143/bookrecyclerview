@@ -10,6 +10,12 @@ import android.view.ViewGroup;
 
 class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
     private static final String TAG = "BookLayoutManager";
+    static final int ID_PAGE_LEFT = 0;
+    static final int ID_PAGE_LEFT_BOTTOM = 1;
+    static final int ID_PAGE_LEFT_TOP = 2;
+    static final int ID_PAGE_RIGHT = 3;
+    static final int ID_PAGE_RIGHT_BOTTOM = 4;
+    static final int ID_PAGE_RIGHT_TOP = 5;
 
     private View pageLeft, pageLeftBottom, pageLeftTop;
     private View pageRight, pageRightBottom, pageRightTop;
@@ -23,6 +29,24 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
             if (Math.abs(rotation) % 90 != 0) {
                 return view;
             }
+        }
+        return null;
+    }
+
+    View findViewByPageId(int pageId) {
+        switch (pageId) {
+            case ID_PAGE_LEFT:
+                return pageLeft;
+            case ID_PAGE_LEFT_BOTTOM:
+                return pageLeftBottom;
+            case ID_PAGE_LEFT_TOP:
+                return pageLeftTop;
+            case ID_PAGE_RIGHT:
+                return pageRight;
+            case ID_PAGE_RIGHT_BOTTOM:
+                return pageRightBottom;
+            case ID_PAGE_RIGHT_TOP:
+                return pageRightTop;
         }
         return null;
     }
@@ -185,10 +209,11 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public PointF computeScrollVectorForPosition(int targetPosition) {
-        if (getChildCount() == 0 || scrollX == 0) {
+        if (getChildCount() == 0) {
             return null;
         }
-        int direction = scrollX > 0 ? 1 : -1;
+        int direction = targetPosition == 0 ? -1 : 1;
+        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", direction = " + direction);
         return new PointF(direction, 0);
     }
 
@@ -275,7 +300,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 currentPosition = getPosition(pageLeft);
             }
         }
-        Log.i(TAG, "find current position, item count = " + itemCount + ", view count = " + viewCount + ", position = " + currentPosition);
+        //Log.i(TAG, "find current position, item count = " + itemCount + ", view count = " + viewCount + ", position = " + currentPosition);
     }
 
     private View fillLeftPage(int position, SparseArray viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {

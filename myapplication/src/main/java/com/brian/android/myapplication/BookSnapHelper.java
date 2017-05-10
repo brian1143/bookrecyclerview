@@ -6,6 +6,7 @@ import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 
 class BookSnapHelper extends SnapHelper {
@@ -23,14 +24,33 @@ class BookSnapHelper extends SnapHelper {
     @Override
     public int[] calculateDistanceToFinalSnap(@NonNull RecyclerView.LayoutManager layoutManager, @NonNull View targetView) {
         int[] out = new int[2];
-        float distanceToFinalDegree;
-        if (Math.abs(targetView.getRotationY()) < 90) {
-            distanceToFinalDegree = targetView.getRotationY();
-        } else {
-            distanceToFinalDegree = targetView.getRotationY() - 180;
+        float distanceToFinalDegree = targetView.getRotationY();
+        if (Math.abs(distanceToFinalDegree) < 90) {
+            out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
+        } else if (distanceToFinalDegree == 90) {
+            if (layoutManager instanceof BookLayoutManager) {
+                BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
+                View rotatingView = bookLayoutManager.findRotatingView();
+                if (rotatingView != null) {
+                    distanceToFinalDegree = rotatingView.getRotationY() - (-90) + 90;
+                } else {
+                    distanceToFinalDegree = 90;
+                }
+                out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
+            }
+        } else if (distanceToFinalDegree == -90) {
+            if (layoutManager instanceof BookLayoutManager) {
+                BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
+                View rotatingView = bookLayoutManager.findRotatingView();
+                if (rotatingView != null) {
+                    distanceToFinalDegree = -(90 - rotatingView.getRotationY() + 90);
+                } else {
+                    distanceToFinalDegree = -90;
+                }
+                out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
+            }
         }
-        out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
-        //Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
+        Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
         return out;
     }
 
@@ -41,14 +61,32 @@ class BookSnapHelper extends SnapHelper {
             BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
             view = bookLayoutManager.findRotatingView();
         }
-        //Log.i(TAG, "find snap view, view = " + view);
+        Log.i(TAG, "find snap view, view = " + view);
         return view;
     }
 
     @Override
     public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager, int velocityX, int velocityY) {
-        //Log.i(TAG, "find target snap position, velocityX = " + velocityX + ", velocityY = " + velocityY);
-        return 0;
+        Log.i(TAG, "find target snap position, velocityX = " + velocityX + ", velocityY = " + velocityY);
+        if (velocityX == 0) {
+            return RecyclerView.NO_POSITION;
+        }
+
+        View view = null;
+        if (layoutManager instanceof BookLayoutManager) {
+            BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
+            if (velocityX > 0) {
+                view = bookLayoutManager.findViewByPageId(BookLayoutManager.ID_PAGE_LEFT_TOP);
+            } else {
+                view = bookLayoutManager.findViewByPageId(BookLayoutManager.ID_PAGE_RIGHT_TOP);
+            }
+        }
+
+        if (view == null) {
+            return RecyclerView.NO_POSITION;
+        }
+
+        return layoutManager.getPosition(view);
     }
 
     @Override
