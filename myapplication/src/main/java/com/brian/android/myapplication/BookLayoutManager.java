@@ -23,12 +23,17 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private int scrollX;
 
     View findRotatingView() {
-        for (int i = 0; i < getChildCount(); i++) {
-            View view = getChildAt(i);
-            float rotation = view.getRotationY();
-            if (Math.abs(rotation) % 90 != 0) {
-                return view;
-            }
+        if (scrollX >= 90) {
+            return pageLeftTop;
+        }
+        if (scrollX > 0) {
+            return pageRight;
+        }
+        if (scrollX <= -90) {
+            return pageRightTop;
+        }
+        if (scrollX < 0) {
+            return pageLeft;
         }
         return null;
     }
