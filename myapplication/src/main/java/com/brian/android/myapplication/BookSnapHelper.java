@@ -11,7 +11,7 @@ import android.view.View;
 
 class BookSnapHelper extends SnapHelper {
     private static final String TAG = "BookSnapHelper";
-    private static final float MILLISECONDS_PER_INCH = 50f;
+    private static final float MILLISECONDS_PER_INCH = 20f;
 
     RecyclerView recyclerView;
 

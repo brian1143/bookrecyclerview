@@ -217,9 +217,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         if (getChildCount() == 0) {
             return null;
         }
-        int direction = targetPosition == 0 ? -1 : 1;
-        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", direction = " + direction);
-        return new PointF(direction, 0);
+        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition);
+        return null;
     }
 
     private void fillPages(RecyclerView.Recycler recycler, RecyclerView.State state) {
