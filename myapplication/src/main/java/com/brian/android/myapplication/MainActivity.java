@@ -3,6 +3,9 @@ package com.brian.android.myapplication;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -12,13 +15,14 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     private List<AdapterData> dataList = new ArrayList<>();
     private Adapter adapter;
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new BookLayoutManager());
         adapter = new Adapter();
         recyclerView.setAdapter(adapter);
@@ -32,6 +36,23 @@ public class MainActivity extends AppCompatActivity {
 
         AdapterData data = new AdapterData();
         dataList.add(data);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_go:
+                recyclerView.scrollToPosition(10);
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void prependData(AdapterData data) {

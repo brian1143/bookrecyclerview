@@ -172,6 +172,11 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     }
 
     @Override
+    public void scrollToPosition(int position) {
+        super.scrollToPosition(position);
+    }
+
+    @Override
     public PointF computeScrollVectorForPosition(int targetPosition) {
         if (getChildCount() == 0) {
             return null;
