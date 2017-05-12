@@ -119,8 +119,9 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (getChildCount() == 0) {
-            return dx;
+        int childCount = getChildCount();
+        if (childCount <= 1) {
+            return 0;
         }
 
         // Update scroll position.
@@ -148,6 +149,13 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 scrollX += dx;
             }
         } else {
+            if (dx > 0 && pageLeftTop == null) {
+                return 0;
+            }
+            if (dx < 0 && pageRightTop == null) {
+                return 0;
+            }
+
             // Initial scroll.
             scrollX = dx;
             if (Math.abs(scrollX) > fullTurnPageScrollDistance) {
@@ -176,21 +184,17 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
 
         if (scrollX == fullTurnPageScrollDistance) {
-            if (pageLeftTop != null) {
-                pageLeftPosition = getPosition(pageLeftTop);
-                fillPages(recycler, state);
-                scrollX = 0;
-                turnPageByScroll();
-            }
+            pageLeftPosition += 2;
+            fillPages(recycler, state);
+            scrollX = 0;
+            turnPageByScroll();
         }
 
         if (scrollX == -fullTurnPageScrollDistance) {
-            if (pageLeftBottom != null) {
-                pageLeftPosition = getPosition(pageLeftBottom);
-                fillPages(recycler, state);
-                scrollX = 0;
-                turnPageByScroll();
-            }
+            pageLeftPosition -= 2;
+            fillPages(recycler, state);
+            scrollX = 0;
+            turnPageByScroll();
         }
     }
 

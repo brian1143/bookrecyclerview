@@ -2,9 +2,7 @@ package com.brian.android.myapplication;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -36,14 +34,15 @@ public class MainActivity extends AppCompatActivity {
         dataList.add(data);
     }
 
-    private void addData(AdapterData data) {
+    private void prependData(AdapterData data) {
         if (dataList.indexOf(data) == 0) {
             AdapterData newData = new AdapterData();
             newData.id = data.id - 1;
             dataList.add(0, newData);
             adapter.notifyItemInserted(dataList.indexOf(newData));
         }
-
+    }
+    private void appendData(AdapterData data) {
         if (dataList.indexOf(data) == dataList.size() - 1) {
             AdapterData newData = new AdapterData();
             newData.id = data.id + 1;
@@ -57,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class Adapter extends RecyclerView.Adapter<Adapter.MyViewHolder> {
+        private static final int MAX_SIZE = 20;
         class MyViewHolder extends RecyclerView.ViewHolder {
             MyViewHolder(View itemView) {
                 super(itemView);
@@ -74,13 +74,26 @@ public class MainActivity extends AppCompatActivity {
             DataView dataView = (DataView) holder.itemView;
             dataView.bindData(data);
 
-            if (dataList.indexOf(data) == 0 || dataList.indexOf(data) == dataList.size() - 1) {
-                dataView.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        addData(data);
-                    }
-                }, 500);
+            if (dataList.indexOf(data) == dataList.size() - 1) {
+                if (dataList.size() < MAX_SIZE) {
+                    dataView.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            appendData(data);
+                        }
+                    }, 500);
+                }
+            }
+
+            if (dataList.indexOf(data) == 0) {
+                if (dataList.size() < MAX_SIZE) {
+                    dataView.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            prependData(data);
+                        }
+                    }, 500);
+                }
             }
         }
 
