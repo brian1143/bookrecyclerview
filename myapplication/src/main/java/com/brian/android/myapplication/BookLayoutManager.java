@@ -2,58 +2,100 @@ package com.brian.android.myapplication;
 
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 
 class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
+    @SuppressWarnings("unused")
     private static final String TAG = "BookLayoutManager";
-    static final int ID_PAGE_LEFT = 0;
-    static final int ID_PAGE_LEFT_BOTTOM = 1;
-    static final int ID_PAGE_LEFT_TOP = 2;
-    static final int ID_PAGE_RIGHT = 3;
-    static final int ID_PAGE_RIGHT_BOTTOM = 4;
-    static final int ID_PAGE_RIGHT_TOP = 5;
 
     private View pageLeft, pageLeftBottom, pageLeftTop;
     private View pageRight, pageRightBottom, pageRightTop;
     private int pageLeftPosition;
     private int scrollX;
 
-    View findRotatingView() {
-        if (scrollX >= 90) {
-            return pageLeftTop;
-        }
-        if (scrollX > 0) {
-            return pageRight;
-        }
-        if (scrollX <= -90) {
-            return pageRightTop;
-        }
-        if (scrollX < 0) {
+    /**
+     * Find a visible view for snap helper to calculate snap distance.
+     * Normally, it should be either the left page or the right page.
+     * @return the visible view.
+     */
+    View findSnapView() {
+        if (pageLeft != null) {
             return pageLeft;
+        }
+        if (pageRight != null) {
+            return pageRight;
         }
         return null;
     }
 
-    View findViewByPageId(int pageId) {
-        switch (pageId) {
-            case ID_PAGE_LEFT:
-                return pageLeft;
-            case ID_PAGE_LEFT_BOTTOM:
-                return pageLeftBottom;
-            case ID_PAGE_LEFT_TOP:
-                return pageLeftTop;
-            case ID_PAGE_RIGHT:
-                return pageRight;
-            case ID_PAGE_RIGHT_BOTTOM:
-                return pageRightBottom;
-            case ID_PAGE_RIGHT_TOP:
-                return pageRightTop;
+    /**
+     * Calculate distance for snap helper to snap.
+     * @param targetView If the view is either pageLeft or pageRight, it is a normal snap.
+     *                   If the view is either pageLeftTop or pageRightTop, it is a flip.
+     * @return the distance to snap.
+     */
+    int[] calculateDistanceToFinalSnap(@NonNull View targetView) {
+        int turnPageDistance  = getTurnPageScrollDistance();
+        int[] out = new int[2];
+
+        if (targetView == pageLeft || targetView == pageRight) {
+            if (Math.abs(scrollX) < turnPageDistance) {
+                out[0] = -scrollX;
+            } else {
+                out[0] = Integer.signum(scrollX) * (2 * turnPageDistance - Math.abs(scrollX));
+            }
         }
-        return null;
+
+        if (targetView == pageLeftTop) {
+            if (scrollX >= 0) {
+                out[0] = 2 * turnPageDistance - scrollX;
+            } else {
+                out[0] = -scrollX;
+            }
+        }
+
+        if (targetView == pageRightTop) {
+            if (scrollX <= 0) {
+                out[0] = - 2 * turnPageDistance - scrollX;
+            } else {
+                out[0] = -scrollX;
+            }
+        }
+        //Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
+
+        return out;
+    }
+
+    /**
+     * For snap helper, find item position according to the fling velocity.
+     * @param velocityX Fling velocity. velocityX > 0 for fling forward.
+     * @return position of pageLeftTop or pageRightTop if non-null. Otherwise,
+     * return position of pageLeft or pageRight.
+     */
+    int findTargetSnapPosition(int velocityX) {
+        if (velocityX != 0) {
+            if (velocityX > 0) {
+                if (pageLeftTop != null) {
+                    return getPosition(pageLeftTop);
+                }
+                if (pageLeft != null) {
+                    return getPosition(pageLeft);
+                }
+            }
+            if (velocityX < 0) {
+                if (pageRightTop != null) {
+                    return getPosition(pageRightTop);
+                }
+                if (pageRight != null) {
+                    return getPosition(pageRight);
+                }
+            }
+        }
+        return RecyclerView.NO_POSITION;
     }
 
     @Override
@@ -126,7 +168,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         if (getChildCount() == 0) {
             return null;
         }
-        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition);
+        //Log.i(TAG, "compute scroll vector for position, position = " + targetPosition);
         return null;
     }
 

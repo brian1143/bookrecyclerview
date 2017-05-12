@@ -26,67 +26,28 @@ class BookSnapHelper extends SnapHelper {
         View view = null;
         if (layoutManager instanceof BookLayoutManager) {
             BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
-            view = bookLayoutManager.findRotatingView();
+            view = bookLayoutManager.findSnapView();
         }
-        //Log.i(TAG, "find snap view, view = " + view);
         return view;
     }
 
+    @NonNull
     @Override
     public int[] calculateDistanceToFinalSnap(@NonNull RecyclerView.LayoutManager layoutManager, @NonNull View targetView) {
-        int[] out = new int[2];
-        float distanceToFinalDegree = targetView.getRotationY();
-        if (Math.abs(distanceToFinalDegree) < 90) {
-            out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
-        } else if (distanceToFinalDegree == 90) {
-            if (layoutManager instanceof BookLayoutManager) {
-                BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
-                View rotatingView = bookLayoutManager.findRotatingView();
-                if (rotatingView != null) {
-                    distanceToFinalDegree = rotatingView.getRotationY() - (-90) + 90;
-                } else {
-                    distanceToFinalDegree = 90;
-                }
-                out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
-            }
-        } else if (distanceToFinalDegree == -90) {
-            if (layoutManager instanceof BookLayoutManager) {
-                BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
-                View rotatingView = bookLayoutManager.findRotatingView();
-                if (rotatingView != null) {
-                    distanceToFinalDegree = -(90 - rotatingView.getRotationY() + 90);
-                } else {
-                    distanceToFinalDegree = -90;
-                }
-                out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
-            }
+        if (layoutManager instanceof BookLayoutManager) {
+            BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
+            return bookLayoutManager.calculateDistanceToFinalSnap(targetView);
         }
-        //Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
-        return out;
+        return new int[2];
     }
 
     @Override
     public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager, int velocityX, int velocityY) {
-        //Log.i(TAG, "find target snap position, velocityX = " + velocityX + ", velocityY = " + velocityY);
-        if (velocityX == 0) {
-            return RecyclerView.NO_POSITION;
-        }
-
-        View view = null;
         if (layoutManager instanceof BookLayoutManager) {
             BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
-            if (velocityX > 0) {
-                view = bookLayoutManager.findViewByPageId(BookLayoutManager.ID_PAGE_LEFT_TOP);
-            } else {
-                view = bookLayoutManager.findViewByPageId(BookLayoutManager.ID_PAGE_RIGHT_TOP);
-            }
+            return bookLayoutManager.findTargetSnapPosition(velocityX);
         }
-
-        if (view == null) {
-            return RecyclerView.NO_POSITION;
-        }
-
-        return layoutManager.getPosition(view);
+        return RecyclerView.NO_POSITION;
     }
 
     @Override
