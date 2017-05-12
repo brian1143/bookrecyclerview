@@ -6,19 +6,30 @@ import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.View;
 
 class BookSnapHelper extends SnapHelper {
+    @SuppressWarnings("unused")
     private static final String TAG = "BookSnapHelper";
     private static final float MILLISECONDS_PER_INCH = 20f;
 
-    RecyclerView recyclerView;
+    private RecyclerView recyclerView;
 
     @Override
     public void attachToRecyclerView(@Nullable RecyclerView recyclerView) throws IllegalStateException {
         super.attachToRecyclerView(recyclerView);
         this.recyclerView = recyclerView;
+    }
+
+    @Override
+    public View findSnapView(RecyclerView.LayoutManager layoutManager) {
+        View view = null;
+        if (layoutManager instanceof BookLayoutManager) {
+            BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
+            view = bookLayoutManager.findRotatingView();
+        }
+        //Log.i(TAG, "find snap view, view = " + view);
+        return view;
     }
 
     @Override
@@ -50,24 +61,13 @@ class BookSnapHelper extends SnapHelper {
                 out[0] = (int) (layoutManager.getWidth() * distanceToFinalDegree / 180);
             }
         }
-        Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
+        //Log.i(TAG, "calculate distance to final snap, target = " + targetView.getId() + ", rotation = " + targetView.getRotationY() + ", distance = [" + out[0] + ", " + out[1] + "]");
         return out;
     }
 
     @Override
-    public View findSnapView(RecyclerView.LayoutManager layoutManager) {
-        View view = null;
-        if (layoutManager instanceof BookLayoutManager) {
-            BookLayoutManager bookLayoutManager = (BookLayoutManager) layoutManager;
-            view = bookLayoutManager.findRotatingView();
-        }
-        Log.i(TAG, "find snap view, view = " + view);
-        return view;
-    }
-
-    @Override
     public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager, int velocityX, int velocityY) {
-        Log.i(TAG, "find target snap position, velocityX = " + velocityX + ", velocityY = " + velocityY);
+        //Log.i(TAG, "find target snap position, velocityX = " + velocityX + ", velocityY = " + velocityY);
         if (velocityX == 0) {
             return RecyclerView.NO_POSITION;
         }
