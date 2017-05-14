@@ -15,6 +15,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private View pageLeft, pageLeftBottom, pageLeftTop;
     private View pageRight, pageRightBottom, pageRightTop;
     private int pageLeftPosition;
+    private int pendingPosition;
     private int scrollX;
 
     /**
@@ -98,6 +99,11 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         return RecyclerView.NO_POSITION;
     }
 
+    BookLayoutManager() {
+        super();
+        pendingPosition = RecyclerView.NO_POSITION;
+    }
+
     @Override
     public RecyclerView.LayoutParams generateDefaultLayoutParams() {
         return new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -105,9 +111,15 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        findCurrentPosition();
+        int pageLeftPosition;
+        if (pendingPosition != RecyclerView.NO_POSITION) {
+            pageLeftPosition = pendingPosition;
+            pendingPosition = RecyclerView.NO_POSITION;
+        } else {
+            pageLeftPosition = findPageLeftPosition();
+        }
 
-        fillPages(recycler, state);
+        fillPages(pageLeftPosition, recycler, state);
 
         turnPageByScroll();
     }
@@ -173,7 +185,14 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public void scrollToPosition(int position) {
-        super.scrollToPosition(position);
+        if (position < 0 || position >= getItemCount()) {
+            return;
+        }
+        if (pageLeftPosition == position) {
+            return;
+        }
+        pendingPosition = position;
+        requestLayout();
     }
 
     @Override
@@ -189,21 +208,19 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
 
         if (scrollX == fullTurnPageScrollDistance) {
-            pageLeftPosition += 2;
-            fillPages(recycler, state);
             scrollX = 0;
+            fillPages(pageLeftPosition + 2, recycler, state);
             turnPageByScroll();
         }
 
         if (scrollX == -fullTurnPageScrollDistance) {
-            pageLeftPosition -= 2;
-            fillPages(recycler, state);
             scrollX = 0;
+            fillPages(pageLeftPosition - 2, recycler, state);
             turnPageByScroll();
         }
     }
 
-    private void fillPages(RecyclerView.Recycler recycler, RecyclerView.State state) {
+    private void fillPages(int pageLeftPosition, RecyclerView.Recycler recycler, RecyclerView.State state) {
         // Detach all current views and cache for reference.
         SparseArray<View> viewCache = new SparseArray<>(getChildCount());
         if (getChildCount() != 0) {
@@ -223,6 +240,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         pageRightBottom = attachRightPage(pageLeftPosition + 3, viewCache, recycler, state);
         pageRight = attachRightPage(pageLeftPosition + 1, viewCache, recycler, state);
         pageRightTop = attachRightPage(pageLeftPosition - 1, viewCache, recycler, state);
+        this.pageLeftPosition = pageLeftPosition;
 
         // Recycler useless views.
         for (int i=0; i < viewCache.size(); i++) {
@@ -230,35 +248,32 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         }
     }
 
-    private void findCurrentPosition() {
+    private int findPageLeftPosition() {
         if (pageLeft != null) {
-            pageLeftPosition = getPosition(pageLeft);
-            return;
+            return getPosition(pageLeft);
         }
 
         if (pageRight != null) {
-            pageLeftPosition = getPosition(pageRight) - 1;
-            return;
+            return getPosition(pageRight) - 1;
         }
 
         if (pageRightTop != null) {
-            pageLeftPosition = getPosition(pageRightTop) + 1;
-            return;
+            return getPosition(pageRightTop) + 1;
         }
 
         if (pageLeftTop != null) {
-            pageLeftPosition = getPosition(pageLeftTop) - 2;
-            return;
+            return getPosition(pageLeftTop) - 2;
         }
 
         if (pageLeftBottom != null) {
-            pageLeftPosition = getPosition(pageLeftBottom) + 2;
-            return;
+            return getPosition(pageLeftBottom) + 2;
         }
 
         if (pageRightBottom != null) {
-            pageLeftPosition = getPosition(pageRightBottom) - 3;
+            return getPosition(pageRightBottom) - 3;
         }
+
+        return 0;
         //Log.i(TAG, "find current position, position = " + pageLeftPosition);
     }
 
