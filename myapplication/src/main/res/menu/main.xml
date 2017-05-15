@@ -5,4 +5,8 @@
         android:id="@+id/action_go"
         app:showAsAction="never"
         android:title="Go"/>
+    <item
+        android:id="@+id/action_scroll"
+        app:showAsAction="never"
+        android:title="Scroll"/>
 </menu>

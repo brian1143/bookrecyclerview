@@ -3,7 +3,9 @@ package com.brian.android.myapplication;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +17,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private View pageLeft, pageLeftBottom, pageLeftTop;
     private View pageRight, pageRightBottom, pageRightTop;
     private int pageLeftPosition;
-    private int pendingPosition;
+    private int pendingPageLeftPosition;
     private int scrollX;
 
     /**
@@ -101,7 +103,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     BookLayoutManager() {
         super();
-        pendingPosition = RecyclerView.NO_POSITION;
+        pendingPageLeftPosition = RecyclerView.NO_POSITION;
     }
 
     @Override
@@ -112,9 +114,9 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int pageLeftPosition;
-        if (pendingPosition != RecyclerView.NO_POSITION) {
-            pageLeftPosition = pendingPosition;
-            pendingPosition = RecyclerView.NO_POSITION;
+        if (pendingPageLeftPosition != RecyclerView.NO_POSITION) {
+            pageLeftPosition = pendingPageLeftPosition;
+            pendingPageLeftPosition = RecyclerView.NO_POSITION;
         } else {
             pageLeftPosition = findPageLeftPosition();
         }
@@ -188,11 +190,39 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         if (position < 0 || position >= getItemCount()) {
             return;
         }
-        if (pageLeftPosition == position) {
+        if (position == pageLeftPosition || position == pageLeftPosition + 1) {
             return;
         }
-        pendingPosition = position;
+
+        boolean isLeftPage = (position - pageLeftPosition) % 2 == 0;
+        pendingPageLeftPosition = isLeftPage ? position : position - 1;
         requestLayout();
+    }
+
+    @Override
+    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, int position) {
+        if (position < 0 || position >= getItemCount()) {
+            return;
+        }
+        if (position == pageLeftPosition || position == pageLeftPosition + 1) {
+            return;
+        }
+
+        LinearSmoothScroller linearSmoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
+            @Override
+            protected void onTargetFound(View targetView, RecyclerView.State state, Action action) {
+/*                boolean forward = getPosition(targetView) >= pageLeftPosition + 2;
+                int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
+                final int dx = forward ? fullTurnPageScrollDistance : -fullTurnPageScrollDistance;
+                final int time = calculateTimeForDeceleration(Math.abs(dx));
+                if (time > 0) {
+                    action.update(dx, 0, time, mDecelerateInterpolator);
+                }*/
+            }
+        };
+        boolean isLeftPage = (position - pageLeftPosition) % 2 == 0;
+        linearSmoothScroller.setTargetPosition(isLeftPage ? position : position - 1);
+        startSmoothScroll(linearSmoothScroller);
     }
 
     @Override
@@ -200,8 +230,10 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         if (getChildCount() == 0) {
             return null;
         }
-        //Log.i(TAG, "compute scroll vector for position, position = " + targetPosition);
-        return null;
+        int pageLeftPosition = findPageLeftPosition();
+        final int direction = targetPosition < pageLeftPosition ? -1 : 1;
+        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", current position = " + pageLeftPosition);
+        return new PointF(direction, 0);
     }
 
     private void checkScrollEnd(RecyclerView.Recycler recycler, RecyclerView.State state) {
