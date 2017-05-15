@@ -133,8 +133,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int childCount = getChildCount();
-        if (childCount <= 1) {
+        if (getChildCount() <= 1) {
             return 0;
         }
 
@@ -143,10 +142,10 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         if (scrollX > 0) {
             // Scroll forward.
             if (scrollX + dx > fullTurnPageScrollDistance) {
-                dx = fullTurnPageScrollDistance - scrollX;
+                //dx = fullTurnPageScrollDistance - scrollX;
                 scrollX = fullTurnPageScrollDistance;
             } else if (scrollX + dx < 0) {
-                dx = -scrollX;
+                //dx = -scrollX;
                 scrollX = 0;
             } else {
                 scrollX += dx;
@@ -154,10 +153,10 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         } else if (scrollX < 0) {
             // Scroll backward.
             if (scrollX + dx < -fullTurnPageScrollDistance) {
-                dx = -fullTurnPageScrollDistance - scrollX;
+                //dx = -fullTurnPageScrollDistance - scrollX;
                 scrollX = -fullTurnPageScrollDistance;
             } else if (scrollX + dx > 0) {
-                dx = -scrollX;
+                //dx = -scrollX;
                 scrollX = 0;
             } else {
                 scrollX += dx;
@@ -174,13 +173,13 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
             scrollX = dx;
             if (Math.abs(scrollX) > fullTurnPageScrollDistance) {
                 scrollX = Integer.signum(dx) * fullTurnPageScrollDistance;
-                dx = scrollX;
+                //dx = scrollX;
             }
         }
 
-        turnPageByScroll();
-
         checkScrollEnd(recycler, state);
+
+        turnPageByScroll();
 
         return dx;
     }
@@ -208,20 +207,22 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
             return;
         }
 
+        boolean isLeftPage = (position - pageLeftPosition) % 2 == 0;
+        int targetPosition = isLeftPage ? position : position - 1;
+
         LinearSmoothScroller linearSmoothScroller = new LinearSmoothScroller(recyclerView.getContext()) {
             @Override
             protected void onTargetFound(View targetView, RecyclerView.State state, Action action) {
-/*                boolean forward = getPosition(targetView) >= pageLeftPosition + 2;
+                boolean forward = getPosition(targetView) >= pageLeftPosition + 2;
                 int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
                 final int dx = forward ? fullTurnPageScrollDistance : -fullTurnPageScrollDistance;
                 final int time = calculateTimeForDeceleration(Math.abs(dx));
                 if (time > 0) {
                     action.update(dx, 0, time, mDecelerateInterpolator);
-                }*/
+                }
             }
         };
-        boolean isLeftPage = (position - pageLeftPosition) % 2 == 0;
-        linearSmoothScroller.setTargetPosition(isLeftPage ? position : position - 1);
+        linearSmoothScroller.setTargetPosition(targetPosition);
         startSmoothScroll(linearSmoothScroller);
     }
 
@@ -240,15 +241,13 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
 
         if (scrollX == fullTurnPageScrollDistance) {
-            scrollX = 0;
             fillPages(pageLeftPosition + 2, recycler, state);
-            turnPageByScroll();
+            scrollX = 0;
         }
 
         if (scrollX == -fullTurnPageScrollDistance) {
-            scrollX = 0;
             fillPages(pageLeftPosition - 2, recycler, state);
-            turnPageByScroll();
+            scrollX = 0;
         }
     }
 
