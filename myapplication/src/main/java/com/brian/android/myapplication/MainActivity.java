@@ -49,10 +49,10 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_go:
-                recyclerView.scrollToPosition(5);
+                recyclerView.scrollToPosition(4);
                 return true;
             case R.id.action_scroll:
-                recyclerView.smoothScrollToPosition(15);
+                recyclerView.smoothScrollToPosition(5);
                 return true;
         }
         return super.onOptionsItemSelected(item);

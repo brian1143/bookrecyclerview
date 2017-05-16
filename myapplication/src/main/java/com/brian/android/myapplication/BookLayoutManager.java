@@ -1,5 +1,9 @@
 package com.brian.android.myapplication;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.RectEvaluator;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.support.annotation.NonNull;
@@ -9,6 +13,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 
 class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
     @SuppressWarnings("unused")
@@ -19,6 +24,8 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private int pageLeftPosition;
     private int pendingPageLeftPosition;
     private int scrollX;
+    private View retainingPage;
+    private int retainingPagePosition;
 
     /**
      * Find a visible view for snap helper to calculate snap distance.
@@ -104,6 +111,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     BookLayoutManager() {
         super();
         pendingPageLeftPosition = RecyclerView.NO_POSITION;
+        retainingPagePosition = RecyclerView.NO_POSITION;
     }
 
     @Override
@@ -224,6 +232,37 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         };
         linearSmoothScroller.setTargetPosition(targetPosition);
         startSmoothScroll(linearSmoothScroller);
+
+        retainingPagePosition = pageLeftPosition + 1;
+        retainingPage = pageRight;
+        pageRight = null;
+        detachView(retainingPage);
+        attachView(retainingPage);
+
+        Rect local = new Rect();
+        retainingPage.getLocalVisibleRect(local);
+        Rect from = new Rect(local);
+        Rect to = new Rect(local);
+        to.top = to.bottom - local.height()/4;
+        to.bottom = to.bottom - local.height()/16;
+        ObjectAnimator anim1 = ObjectAnimator.ofObject(retainingPage, "clipBounds", new RectEvaluator(), from, to);
+        anim1.setDuration(300);
+        anim1.setInterpolator(new DecelerateInterpolator());
+        anim1.start();
+        Rect end = new Rect(to);
+        end.left = end.right = (end.left + end.right) / 2;
+        end.top = end.bottom = (end.top + end.bottom) / 2;
+        ObjectAnimator anim2 = ObjectAnimator.ofObject (retainingPage, "clipBounds", new RectEvaluator(), to, end);
+        anim2.setDuration(150);
+        anim2.setStartDelay(1000);
+        anim2.start();
+        anim2.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                retainingPagePosition = RecyclerView.NO_POSITION;
+                requestLayout();
+            }
+        });
     }
 
     @Override
@@ -252,6 +291,10 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     }
 
     private void fillPages(int pageLeftPosition, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (retainingPage != null) {
+            detachView(retainingPage);
+        }
+
         // Detach all current views and cache for reference.
         SparseArray<View> viewCache = new SparseArray<>(getChildCount());
         if (getChildCount() != 0) {
@@ -276,6 +319,16 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         // Recycler useless views.
         for (int i=0; i < viewCache.size(); i++) {
             recycler.recycleView(viewCache.valueAt(i));
+        }
+
+        if (retainingPage != null) {
+            if (retainingPagePosition == RecyclerView.NO_POSITION) {
+                retainingPage.setClipBounds(null);
+                recycler.recycleView(retainingPage);
+                retainingPage = null;
+            } else {
+                attachView(retainingPage);
+            }
         }
     }
 
