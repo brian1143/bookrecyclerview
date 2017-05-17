@@ -10,10 +10,12 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.util.SparseArray;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+
+import java.util.ArrayList;
+import java.util.List;
 
 class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerView.SmoothScroller.ScrollVectorProvider {
     @SuppressWarnings("unused")
@@ -26,6 +28,11 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private int scrollX;
     private View retainingPage;
     private int retainingPagePosition;
+
+    @SuppressWarnings("unused")
+    int getPageLeftPosition() {
+        return pageLeftPosition;
+    }
 
     /**
      * Find a visible view for snap helper to calculate snap distance.
@@ -121,13 +128,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-        int pageLeftPosition;
-        if (pendingPageLeftPosition != RecyclerView.NO_POSITION) {
-            pageLeftPosition = pendingPageLeftPosition;
-            pendingPageLeftPosition = RecyclerView.NO_POSITION;
-        } else {
-            pageLeftPosition = findPageLeftPosition();
-        }
+        int pageLeftPosition = findPageLeftPosition();
 
         fillPages(pageLeftPosition, recycler, state);
 
@@ -233,9 +234,33 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         linearSmoothScroller.setTargetPosition(targetPosition);
         startSmoothScroll(linearSmoothScroller);
 
-        retainingPagePosition = pageLeftPosition + 1;
-        retainingPage = pageRight;
-        pageRight = null;
+        retainPage(pageLeftPosition + 1);
+    }
+
+    @Override
+    public PointF computeScrollVectorForPosition(int targetPosition) {
+        if (getChildCount() == 0) {
+            return null;
+        }
+        final int direction = targetPosition < pageLeftPosition ? -1 : 1;
+        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", current position = " + pageLeftPosition);
+        return new PointF(direction, 0);
+    }
+
+    private void retainPage(int position) {
+        if (isLeftPage(position)) {
+            retainingPage = pageLeft;
+            pageLeft = null;
+        } else {
+            retainingPage = pageRight;
+            pageRight = null;
+        }
+        if (retainingPage == null) {
+            return;
+        }
+
+        retainingPagePosition = position;
+        // Re-order, put the retaining page on the top.
         detachView(retainingPage);
         attachView(retainingPage);
 
@@ -265,17 +290,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         });
     }
 
-    @Override
-    public PointF computeScrollVectorForPosition(int targetPosition) {
-        if (getChildCount() == 0) {
-            return null;
-        }
-        int pageLeftPosition = findPageLeftPosition();
-        final int direction = targetPosition < pageLeftPosition ? -1 : 1;
-        Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", current position = " + pageLeftPosition);
-        return new PointF(direction, 0);
-    }
-
     private void checkScrollEnd(RecyclerView.Recycler recycler, RecyclerView.State state) {
         int fullTurnPageScrollDistance = 2 * getTurnPageScrollDistance();
 
@@ -290,37 +304,105 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         }
     }
 
+    private View addViewFromRecycler(int position, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (position < 0 || position > state.getItemCount() - 1) {
+            return null;
+        }
+        View view = recycler.getViewForPosition(position);
+        addView(view);
+        return view;
+    }
+
+    private void layoutLeftPage(View view) {
+        if (view == null) {
+            return;
+        }
+        RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
+        Rect decorRect = new Rect();
+        calculateItemDecorationsForChild(view, decorRect);
+        int size = Math.max(0, getWidth() / 2 - getPaddingLeft() + lp.leftMargin + lp.rightMargin + decorRect.left + decorRect.right);
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.AT_MOST);
+        int heightSpec = getChildMeasureSpec(
+                getHeight(), getHeightMode(),
+                getPaddingTop() + getPaddingBottom() + lp.topMargin + lp.bottomMargin + decorRect.top + decorRect.bottom,
+                lp.height,
+                canScrollVertically()
+        );
+        view.measure(widthSpec, heightSpec);
+        layoutDecorated(view, 0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+
+        view.setCameraDistance(5 * getWidth());
+        view.setPivotX(view.getWidth());
+        view.setPivotY(view.getHeight() / 2);
+    }
+
+    private void layoutRightPage(View view) {
+        if (view == null) {
+            return;
+        }
+        RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
+        Rect decorRect = new Rect();
+        calculateItemDecorationsForChild(view, decorRect);
+        int size = Math.max(0, getWidth() / 2 - getPaddingRight() + lp.leftMargin + lp.rightMargin + decorRect.left + decorRect.right);
+        int widthSpec = View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.AT_MOST);
+        int heightSpec = getChildMeasureSpec(
+                getHeight(), getHeightMode(),
+                getPaddingTop() + getPaddingBottom() + lp.topMargin + lp.bottomMargin + decorRect.top + decorRect.bottom,
+                lp.height,
+                canScrollVertically()
+        );
+        view.measure(widthSpec, heightSpec);
+        layoutDecorated(view, getWidth() / 2, 0, getWidth() / 2 + view.getMeasuredWidth(), view.getMeasuredHeight());
+
+        view.setCameraDistance(5 * getWidth());
+        view.setPivotX(0);
+        view.setPivotY(view.getHeight() / 2);
+    }
+
+    private boolean isLeftPage(int position) {
+        return (position - pageLeftPosition) % 2 == 0;
+    }
+
     private void fillPages(int pageLeftPosition, RecyclerView.Recycler recycler, RecyclerView.State state) {
         if (retainingPage != null) {
             detachView(retainingPage);
         }
 
-        // Detach all current views and cache for reference.
-        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
-        if (getChildCount() != 0) {
-            for (int i = 0; i < getChildCount(); i++) {
-                View child = getChildAt(i);
-                viewCache.put(getPosition(child), child);
-            }
-        }
-        for (int i = 0; i < viewCache.size(); i++) {
-            detachView(viewCache.valueAt(i));
+        // Cache all existing page view before detaching.
+        List<View> cacheView = new ArrayList<>();
+        for (int i = 0; i < getChildCount(); i ++) {
+            cacheView.add(getChildAt(i));
         }
 
-        // According to page position, attach views.
-        pageLeftBottom = attachLeftPage(pageLeftPosition - 2, viewCache, recycler, state);
-        pageLeft = attachLeftPage(pageLeftPosition, viewCache, recycler, state);
-        pageLeftTop = attachLeftPage(pageLeftPosition + 2, viewCache, recycler, state);
-        pageRightBottom = attachRightPage(pageLeftPosition + 3, viewCache, recycler, state);
-        pageRight = attachRightPage(pageLeftPosition + 1, viewCache, recycler, state);
-        pageRightTop = attachRightPage(pageLeftPosition - 1, viewCache, recycler, state);
+        detachAndScrapAttachedViews(recycler);
+
+        // According to page position, attach page views.
+        pageLeftBottom = addViewFromRecycler(pageLeftPosition - 2, recycler, state);
+        pageLeft = addViewFromRecycler(pageLeftPosition, recycler, state);
+        pageLeftTop = addViewFromRecycler(pageLeftPosition + 2, recycler, state);
+        pageRightBottom = addViewFromRecycler(pageLeftPosition + 3, recycler, state);
+        pageRight = addViewFromRecycler(pageLeftPosition + 1, recycler, state);
+        pageRightTop = addViewFromRecycler(pageLeftPosition - 1, recycler, state);
         this.pageLeftPosition = pageLeftPosition;
 
-        // Recycler useless views.
-        for (int i=0; i < viewCache.size(); i++) {
-            recycler.recycleView(viewCache.valueAt(i));
+        // Recycle useless page views
+        for (View view : cacheView) {
+            boolean inUse = (view == pageLeftBottom || view == pageLeft || view == pageLeftTop
+                    || view == pageRightBottom || view == pageRight || view == pageRightTop);
+            if (!inUse) {
+                recycler.recycleView(view);
+            }
         }
 
+        // Measure and layout pages
+        layoutLeftPage(pageLeftBottom);
+        layoutLeftPage(pageLeft);
+        layoutLeftPage(pageLeftTop);
+        layoutRightPage(pageRightBottom);
+        layoutRightPage(pageRight);
+        layoutRightPage(pageRightTop);
+
+        // Attach the retaining page or recycle when the retaining time up.
         if (retainingPage != null) {
             if (retainingPagePosition == RecyclerView.NO_POSITION) {
                 retainingPage.setClipBounds(null);
@@ -333,6 +415,12 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     }
 
     private int findPageLeftPosition() {
+        if (pendingPageLeftPosition != RecyclerView.NO_POSITION) {
+            int pageLeftPosition = pendingPageLeftPosition;
+            pendingPageLeftPosition = RecyclerView.NO_POSITION;
+            return pageLeftPosition;
+        }
+
         if (pageLeft != null) {
             return getPosition(pageLeft);
         }
@@ -359,75 +447,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
 
         return 0;
         //Log.i(TAG, "find current position, position = " + pageLeftPosition);
-    }
-
-    private View attachLeftPage(int position, SparseArray<View> viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (position < 0 || position > state.getItemCount() - 1) {
-            return null;
-        }
-
-        View view = viewCache.get(position);
-        if (view == null) {
-            view = recycler.getViewForPosition(position);
-            view.setCameraDistance(5 * getWidth());
-            addView(view);
-
-            // Measure and layout child.
-            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
-            Rect decorRect = new Rect();
-            calculateItemDecorationsForChild(view, decorRect);
-            int size = Math.max(0, getWidth() / 2 - getPaddingLeft() + lp.leftMargin + lp.rightMargin + decorRect.left + decorRect.right);
-            int widthSpec = View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.AT_MOST);
-            int heightSpec = getChildMeasureSpec(
-                    getHeight(), getHeightMode(),
-                    getPaddingTop() + getPaddingBottom() + lp.topMargin + lp.bottomMargin + decorRect.top + decorRect.bottom,
-                    lp.height,
-                    canScrollVertically()
-            );
-            view.measure(widthSpec, heightSpec);
-            layoutDecorated(view, 0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
-        } else {
-            attachView(view);
-            viewCache.remove(position);
-        }
-
-        view.setPivotX(view.getWidth());
-        view.setPivotY(view.getHeight() / 2);
-        return view;
-    }
-
-    private View attachRightPage(int position, SparseArray<View> viewCache, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (position < 0 || position > state.getItemCount() - 1) {
-            return null;
-        }
-        View view = viewCache.get(position);
-        if (view == null) {
-            view = recycler.getViewForPosition(position);
-            view.setCameraDistance(5 * getWidth());
-            addView(view);
-
-            // Measure and layout child.
-            RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) view.getLayoutParams();
-            Rect decorRect = new Rect();
-            calculateItemDecorationsForChild(view, decorRect);
-            int size = Math.max(0, getWidth() / 2 - getPaddingRight() + lp.leftMargin + lp.rightMargin + decorRect.left + decorRect.right);
-            int widthSpec = View.MeasureSpec.makeMeasureSpec(size, View.MeasureSpec.AT_MOST);
-            int heightSpec = getChildMeasureSpec(
-                    getHeight(), getHeightMode(),
-                    getPaddingTop() + getPaddingBottom() + lp.topMargin + lp.bottomMargin + decorRect.top + decorRect.bottom,
-                    lp.height,
-                    canScrollVertically()
-            );
-            view.measure(widthSpec, heightSpec);
-            layoutDecorated(view, getWidth() / 2, 0, getWidth() / 2 + view.getMeasuredWidth(), view.getMeasuredHeight());
-        } else {
-            attachView(view);
-            viewCache.remove(position);
-        }
-
-        view.setPivotX(0);
-        view.setPivotY(view.getHeight() / 2);
-        return view;
     }
 
     /**
