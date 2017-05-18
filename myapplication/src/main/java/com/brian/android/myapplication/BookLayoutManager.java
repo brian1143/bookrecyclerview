@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,45 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private int scrollX;
     private View retainingPage;
     private int retainingPagePosition;
+
+    void retainPage(int position, Rect retainingRect, long duration) {
+        if (isLeftPage(position)) {
+            retainingPage = pageLeft;
+            pageLeft = null;
+        } else {
+            retainingPage = pageRight;
+            pageRight = null;
+        }
+        if (retainingPage == null) {
+            return;
+        }
+
+        retainingPagePosition = position;
+        // Re-order, put the retaining page on the top.
+        detachView(retainingPage);
+        attachView(retainingPage);
+
+        Rect local = new Rect();
+        retainingPage.getLocalVisibleRect(local);
+        Rect from = new Rect(local);
+        ObjectAnimator anim1 = ObjectAnimator.ofObject(retainingPage, "clipBounds", new RectEvaluator(), from, retainingRect);
+        anim1.setDuration(duration / 4);
+        anim1.setInterpolator(new LinearInterpolator());
+        anim1.start();
+        Rect end = new Rect(retainingRect);
+        end.left = end.right;
+        ObjectAnimator anim2 = ObjectAnimator.ofObject (retainingPage, "clipBounds", new RectEvaluator(), retainingRect, end);
+        anim2.setDuration(150);
+        anim2.setStartDelay(duration);
+        anim2.start();
+        anim2.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                retainingPagePosition = RecyclerView.NO_POSITION;
+                requestLayout();
+            }
+        });
+    }
 
     @SuppressWarnings("unused")
     int getPageLeftPosition() {
@@ -233,8 +273,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         };
         linearSmoothScroller.setTargetPosition(targetPosition);
         startSmoothScroll(linearSmoothScroller);
-
-        retainPage(pageLeftPosition + 1);
     }
 
     @Override
@@ -245,49 +283,6 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
         final int direction = targetPosition < pageLeftPosition ? -1 : 1;
         Log.i(TAG, "compute scroll vector for position, position = " + targetPosition + ", current position = " + pageLeftPosition);
         return new PointF(direction, 0);
-    }
-
-    private void retainPage(int position) {
-        if (isLeftPage(position)) {
-            retainingPage = pageLeft;
-            pageLeft = null;
-        } else {
-            retainingPage = pageRight;
-            pageRight = null;
-        }
-        if (retainingPage == null) {
-            return;
-        }
-
-        retainingPagePosition = position;
-        // Re-order, put the retaining page on the top.
-        detachView(retainingPage);
-        attachView(retainingPage);
-
-        Rect local = new Rect();
-        retainingPage.getLocalVisibleRect(local);
-        Rect from = new Rect(local);
-        Rect to = new Rect(local);
-        to.top = to.bottom - local.height()/4;
-        to.bottom = to.bottom - local.height()/16;
-        ObjectAnimator anim1 = ObjectAnimator.ofObject(retainingPage, "clipBounds", new RectEvaluator(), from, to);
-        anim1.setDuration(300);
-        anim1.setInterpolator(new DecelerateInterpolator());
-        anim1.start();
-        Rect end = new Rect(to);
-        end.left = end.right = (end.left + end.right) / 2;
-        end.top = end.bottom = (end.top + end.bottom) / 2;
-        ObjectAnimator anim2 = ObjectAnimator.ofObject (retainingPage, "clipBounds", new RectEvaluator(), to, end);
-        anim2.setDuration(150);
-        anim2.setStartDelay(1000);
-        anim2.start();
-        anim2.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                retainingPagePosition = RecyclerView.NO_POSITION;
-                requestLayout();
-            }
-        });
     }
 
     private void checkScrollEnd(RecyclerView.Recycler recycler, RecyclerView.State state) {

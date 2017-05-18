@@ -1,5 +1,6 @@
 package com.brian.android.myapplication;
 
+import android.graphics.Rect;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
@@ -52,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
                 recyclerView.scrollToPosition(4);
                 return true;
             case R.id.action_scroll:
+                BookLayoutManager layoutManager = (BookLayoutManager) recyclerView.getLayoutManager();
+                layoutManager.retainPage(6, new Rect(0, 0, 100, 200), 1000);
                 recyclerView.smoothScrollToPosition(5);
                 return true;
         }
