@@ -12,7 +12,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 
 import java.util.ArrayList;
@@ -267,7 +266,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 final int dx = forward ? fullTurnPageScrollDistance : -fullTurnPageScrollDistance;
                 final int time = calculateTimeForDeceleration(Math.abs(dx));
                 if (time > 0) {
-                    action.update(dx, 0, time, mDecelerateInterpolator);
+                    action.update(dx, 0, time * 2, mDecelerateInterpolator);
                 }
             }
         };
