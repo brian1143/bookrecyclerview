@@ -2,14 +2,18 @@ package com.brian.android.myapplication;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.util.Log;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 public class DataView extends ViewGroup {
+    private static final String TAG = "DataView";
     private static final int[] COLOR_LIST = {Color.CYAN, Color.BLUE, Color.GREEN, Color.GRAY, Color.MAGENTA, Color.RED};
     private TextView textView;
+    private MainActivity.AdapterData data;
 
     public DataView(Context context) {
         super(context);
@@ -26,9 +30,16 @@ public class DataView extends ViewGroup {
     }
 
     void bindData(MainActivity.AdapterData data) {
+        this.data = data;
         textView.setText(String.valueOf(data.id));
         int color = COLOR_LIST[Math.abs(data.id + 3) % COLOR_LIST.length];
         setBackgroundColor(color);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        Log.i(TAG, "on touch event, event = " + event.getAction() + ", data = " + data.id + ", rotation y = " + getRotationY());
+        return super.onTouchEvent(event);
     }
 
     @Override

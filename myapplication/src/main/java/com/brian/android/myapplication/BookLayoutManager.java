@@ -530,6 +530,25 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 pageRightTop.setRotationY(-90);
             }
         }
+
+        if (pageLeft != null) {
+            pageLeft.setVisibility(pageLeft.getRotationY() == 90 ? View.INVISIBLE : View.VISIBLE);
+        }
+        if (pageLeftTop != null) {
+            pageLeftTop.setVisibility(pageLeftTop.getRotationY() == 90 ? View.INVISIBLE : View.VISIBLE);
+        }
+        if (pageLeftBottom != null) {
+            pageLeftBottom.setVisibility(View.VISIBLE);
+        }
+        if (pageRight != null) {
+            pageRight.setVisibility(pageRight.getRotationY() == -90 ? View.INVISIBLE : View.VISIBLE);
+        }
+        if (pageRightTop != null) {
+            pageRightTop.setVisibility(pageRightTop.getRotationY() == -90 ? View.INVISIBLE : View.VISIBLE);
+        }
+        if (pageRightBottom != null) {
+            pageRightBottom.setVisibility(View.VISIBLE);
+        }
         //Log.i(TAG, "rotate view by scroll, scroll = " + scrollX + ", rotation = " + rotation);
     }
 }
