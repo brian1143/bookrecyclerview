@@ -29,6 +29,34 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
     private View retainingPage;
     private int retainingPagePosition;
 
+    View getPageLeft() {
+        return pageLeft;
+    }
+
+    View getPageLeftBottom() {
+        return pageLeftBottom;
+    }
+
+    View getPageLeftTop() {
+        return pageLeftTop;
+    }
+
+    View getPageRight() {
+        return pageRight;
+    }
+
+    View getPageRightBottom() {
+        return pageRightBottom;
+    }
+
+    View getPageRightTop() {
+        return pageRightTop;
+    }
+
+    boolean isLeftPage(View view) {
+        return isLeftPage(getPosition(view));
+    }
+
     void retainPage(int position, Rect retainingRect, long duration) {
         if (isLeftPage(position)) {
             retainingPage = pageLeft;
@@ -323,7 +351,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 canScrollVertically()
         );
         view.measure(widthSpec, heightSpec);
-        layoutDecorated(view, 0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+        layoutDecorated(view, 0, 0, getWidth() / 2, getHeight() - getPaddingTop() - getPaddingBottom());
 
         view.setCameraDistance(5 * getWidth());
         view.setPivotX(view.getWidth());
@@ -346,7 +374,7 @@ class BookLayoutManager extends RecyclerView.LayoutManager implements RecyclerVi
                 canScrollVertically()
         );
         view.measure(widthSpec, heightSpec);
-        layoutDecorated(view, getWidth() / 2, 0, getWidth() / 2 + view.getMeasuredWidth(), view.getMeasuredHeight());
+        layoutDecorated(view, getWidth() / 2, 0, getWidth(), getHeight() - getPaddingTop() - getPaddingBottom());
 
         view.setCameraDistance(5 * getWidth());
         view.setPivotX(0);
